@@ -6,7 +6,6 @@ namespace MazeRunner.Tests;
 
 public class GameEngineTests
 {
-    /// <summary>Creates an engine loaded with level 1 using a fixed seed for reproducibility.</summary>
     private static GameEngine CreateEngine(int level = 1)
     {
         var engine = new GameEngine(new MazeGenerator(seed: 42));
@@ -40,17 +39,36 @@ public class GameEngineTests
     }
 
     [Fact]
-    public void MovePlayer_IntoWall_PositionUnchanged()
+    public void LoadLevel_HasKeyIsFalseAtStart()
     {
         var engine = CreateEngine();
-        // (0,0) border cell is always a Wall; player starts at (X=1, Y=1)
-        // Moving Up from (1,1) would go to row 0 which is a Wall
+
+        Assert.False(engine.HasKey);
+    }
+
+    [Fact]
+    public void LoadLevel_GridContainsExactlyOneKeyCell()
+    {
+        var engine = CreateEngine();
+        var grid   = engine.CurrentLevel.Grid;
+        int count  = 0;
+
+        for (int r = 0; r < grid.GetLength(0); r++)
+            for (int c = 0; c < grid.GetLength(1); c++)
+                if (grid[r, c] == Cell.Key) count++;
+
+        Assert.Equal(1, count);
+    }
+
+    [Fact]
+    public void MovePlayer_IntoWall_PositionUnchanged()
+    {
+        var engine  = CreateEngine();
         int beforeX = engine.Player.X;
         int beforeY = engine.Player.Y;
 
         engine.MovePlayer(Direction.Up);
 
-        // Position must not have changed (border wall)
         Assert.Equal(beforeX, engine.Player.X);
         Assert.Equal(beforeY, engine.Player.Y);
     }
@@ -60,7 +78,7 @@ public class GameEngineTests
     {
         var engine = CreateEngine();
 
-        engine.MovePlayer(Direction.Up); // hits wall at row 0
+        engine.MovePlayer(Direction.Up);
 
         Assert.Equal(0, engine.Player.Steps);
     }
@@ -69,38 +87,51 @@ public class GameEngineTests
     public void MovePlayer_IntoFloor_StepsIncremented()
     {
         var engine = CreateEngine();
-        var level  = engine.CurrentLevel;
 
-        // Find a passable neighbour of the start cell (1,1)
         Direction? validDir = FindPassableDirection(engine);
-
-        if (validDir is null)
-        {
-            // Skip — in theory shouldn't happen with a valid maze
-            return;
-        }
+        if (validDir is null) return;
 
         engine.MovePlayer(validDir.Value);
         Assert.Equal(1, engine.Player.Steps);
     }
 
     [Fact]
-    public void MovePlayer_WhenCompleted_DoesNothing()
+    public void MovePlayer_TowardExitWithoutKey_DoesNotComplete()
     {
         var engine = CreateEngine();
 
-        // Teleport the player directly on top of the Exit cell
-        var level = engine.CurrentLevel;
+        Assert.False(engine.HasKey);
+
+        var level   = engine.CurrentLevel;
         int exitRow = level.Height - 2;
         int exitCol = level.Width  - 2;
 
         engine.Player.X = exitCol;
-        engine.Player.Y = exitRow;
+        engine.Player.Y = exitRow - 1;
 
-        // The engine reads position on the next move — simulate one last move
-        // by manually setting exit and checking flag
-        // (direct property test — IsCompleted should be false until a MovePlayer call)
-        Assert.False(engine.IsCompleted);
+        engine.MovePlayer(Direction.Down);
+
+        if (level.Grid[exitRow, exitCol] == Cell.Exit)
+            Assert.False(engine.IsCompleted);
+    }
+
+    [Fact]
+    public void MovePlayer_ExitBlocked_ExitBlockedFeedbackIsTrue()
+    {
+        var engine = CreateEngine();
+        var level  = engine.CurrentLevel;
+        int exitRow = level.Height - 2;
+        int exitCol = level.Width  - 2;
+
+        engine.Player.X = exitCol;
+        engine.Player.Y = exitRow - 1;
+
+        if (level.Grid[exitRow - 1, exitCol] != Cell.Wall)
+        {
+            engine.MovePlayer(Direction.Down);
+            if (!engine.HasKey)
+                Assert.True(engine.ExitBlockedFeedback);
+        }
     }
 
     [Fact]
@@ -116,7 +147,7 @@ public class GameEngineTests
     {
         for (int lvl = 1; lvl <= 6; lvl++)
         {
-            var engine   = new GameEngine(new MazeGenerator(seed: lvl));
+            var engine = new GameEngine(new MazeGenerator(seed: lvl));
             engine.LoadLevel(lvl);
             var expected = LevelConfig.GetLevel(lvl).GridSize;
 
@@ -125,12 +156,11 @@ public class GameEngineTests
         }
     }
 
-    // ── Helpers ────────────────────────────────────────────────────────────────
     private static Direction? FindPassableDirection(GameEngine engine)
     {
-        var level   = engine.CurrentLevel;
-        int px      = engine.Player.X;
-        int py      = engine.Player.Y;
+        var level = engine.CurrentLevel;
+        int px    = engine.Player.X;
+        int py    = engine.Player.Y;
 
         var candidates = new (Direction dir, int row, int col)[]
         {
@@ -143,7 +173,7 @@ public class GameEngineTests
         foreach (var (dir, row, col) in candidates)
         {
             if (row >= 0 && row < level.Height && col >= 0 && col < level.Width &&
-                level.Grid[row, col] != Cell.Wall)
+                level.Grid[row, col] != Cell.Wall && level.Grid[row, col] != Cell.Exit)
                 return dir;
         }
         return null;

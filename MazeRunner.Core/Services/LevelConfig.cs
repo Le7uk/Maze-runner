@@ -1,17 +1,17 @@
 namespace MazeRunner.Core.Services;
 
-public record LevelSettings(int LevelNumber, int GridSize, int ThreeStarSeconds, int TwoStarSeconds);
+public record LevelSettings(int LevelNumber, int GridSize, int ThreeStarSeconds, int TwoStarSeconds, int Seed);
 
 public static class LevelConfig
 {
     private static readonly LevelSettings[] _levels =
     [
-        new(1, 11, 30,  60),
-        new(2, 15, 45,  90),
-        new(3, 19, 60,  120),
-        new(4, 23, 90,  180),
-        new(5, 27, 120, 240),
-        new(6, 31, 150, 300),
+        new(1, 11,  30,  60,  42),
+        new(2, 15,  45,  90,  137),
+        new(3, 19,  60, 120,  256),
+        new(4, 23,  90, 180,  512),
+        new(5, 27, 120, 240, 1024),
+        new(6, 31, 150, 300, 2048),
     ];
 
     public static int TotalLevels => _levels.Length;

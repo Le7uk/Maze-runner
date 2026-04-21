@@ -17,8 +17,7 @@ public class MazeGeneratorTests
         var generator = new MazeGenerator(seed: 42);
         var grid = generator.Generate(size);
 
-        int count = CountCells(grid, Cell.Start);
-        Assert.Equal(1, count);
+        Assert.Equal(1, CountCells(grid, Cell.Start));
     }
 
     [Theory]
@@ -33,8 +32,7 @@ public class MazeGeneratorTests
         var generator = new MazeGenerator(seed: 42);
         var grid = generator.Generate(size);
 
-        int count = CountCells(grid, Cell.Exit);
-        Assert.Equal(1, count);
+        Assert.Equal(1, CountCells(grid, Cell.Exit));
     }
 
     [Theory]
@@ -70,17 +68,16 @@ public class MazeGeneratorTests
         var generator = new MazeGenerator(seed: 99);
         var grid = generator.Generate(size);
 
-        bool allReachable = MazeGenerator.AreAllFloorsReachable(grid);
-        Assert.True(allReachable, $"Not all floor cells are reachable in a {size}x{size} maze.");
+        Assert.True(MazeGenerator.AreAllFloorsReachable(grid),
+            $"Not all floor cells are reachable in a {size}x{size} maze.");
     }
 
     [Fact]
     public void Generate_EvenSizeIsNormalisedToOdd()
     {
         var generator = new MazeGenerator(seed: 1);
-        var grid = generator.Generate(10);   // 10 → should become 11
+        var grid = generator.Generate(10);
 
-        // 10 is even, algorithm bumps it to 11
         Assert.Equal(11, grid.GetLength(0));
         Assert.Equal(11, grid.GetLength(1));
     }
@@ -94,14 +91,13 @@ public class MazeGeneratorTests
 
         for (int i = 0; i < size; i++)
         {
-            Assert.Equal(Cell.Wall, grid[0, i]);       // top row
-            Assert.Equal(Cell.Wall, grid[size - 1, i]); // bottom row
-            Assert.Equal(Cell.Wall, grid[i, 0]);       // left column
-            Assert.Equal(Cell.Wall, grid[i, size - 1]); // right column
+            Assert.Equal(Cell.Wall, grid[0, i]);
+            Assert.Equal(Cell.Wall, grid[size - 1, i]);
+            Assert.Equal(Cell.Wall, grid[i, 0]);
+            Assert.Equal(Cell.Wall, grid[i, size - 1]);
         }
     }
 
-    // ── Helpers ────────────────────────────────────────────────────────────────
     private static int CountCells(Cell[,] grid, Cell target)
     {
         int count = 0;

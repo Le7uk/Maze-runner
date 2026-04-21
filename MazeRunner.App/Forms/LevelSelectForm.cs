@@ -5,7 +5,6 @@ namespace MazeRunner.App.Forms;
 
 public sealed class LevelSelectForm : Form
 {
-    // Level card panels, refreshed when form is shown
     private readonly Panel[] _levelCards = new Panel[LevelConfig.TotalLevels];
 
     public LevelSelectForm()
@@ -30,7 +29,6 @@ public sealed class LevelSelectForm : Form
         FormBorderStyle = FormBorderStyle.FixedSingle;
         MaximizeBox     = false;
 
-        // Title
         var titleLabel = new Label
         {
             Text      = "SELECT LEVEL",
@@ -43,13 +41,12 @@ public sealed class LevelSelectForm : Form
         };
         Controls.Add(titleLabel);
 
-        // 6 level cards — 3 columns × 2 rows
-        int cardW   = 160;
-        int cardH   = 130;
-        int startX  = 30;
-        int startY  = 80;
-        int padX    = 20;
-        int padY    = 20;
+        int cardW  = 160;
+        int cardH  = 130;
+        int startX = 30;
+        int startY = 80;
+        int padX   = 20;
+        int padY   = 20;
 
         for (int i = 0; i < LevelConfig.TotalLevels; i++)
         {
@@ -64,7 +61,6 @@ public sealed class LevelSelectForm : Form
             Controls.Add(card);
         }
 
-        // Back button
         var backButton = new Button
         {
             Text        = "◀  BACK",
@@ -91,7 +87,6 @@ public sealed class LevelSelectForm : Form
             Cursor    = Cursors.Hand
         };
 
-        // Level number label
         var numLabel = new Label
         {
             Text      = $"Level {levelNum}",
@@ -104,7 +99,6 @@ public sealed class LevelSelectForm : Form
             Tag       = $"title_{levelNum}"
         };
 
-        // Stars row label (will be updated by RefreshStars)
         var starsLabel = new Label
         {
             Text      = "☆☆☆",
@@ -117,9 +111,8 @@ public sealed class LevelSelectForm : Form
             Tag       = $"stars_{levelNum}"
         };
 
-        // Size info
-        var settings   = LevelConfig.GetLevel(levelNum);
-        var sizeLabel  = new Label
+        var settings  = LevelConfig.GetLevel(levelNum);
+        var sizeLabel = new Label
         {
             Text      = $"{settings.GridSize}×{settings.GridSize}",
             Font      = new Font("Segoe UI", 9f),
@@ -132,12 +125,10 @@ public sealed class LevelSelectForm : Form
 
         card.Controls.AddRange([numLabel, starsLabel, sizeLabel]);
 
-        // Click on card or any child → launch level
         card.Click += (_, _) => LaunchLevel(levelNum);
         foreach (Control child in card.Controls)
             child.Click += (_, _) => LaunchLevel(levelNum);
 
-        // Hover highlight
         card.MouseEnter += (_, _) => card.BackColor = Color.FromArgb(50, 50, 70);
         card.MouseLeave += (_, _) => card.BackColor = Color.FromArgb(30, 30, 40);
         foreach (Control child in card.Controls)
@@ -153,7 +144,6 @@ public sealed class LevelSelectForm : Form
     {
         int? nextLevel = levelNum;
 
-        // Loop: keep launching the next level as long as the player clicks "Next Level"
         while (nextLevel.HasValue)
         {
             using var gameForm = new GameForm(nextLevel.Value);
@@ -164,7 +154,6 @@ public sealed class LevelSelectForm : Form
         RefreshStars();
     }
 
-    /// <summary>Re-reads SessionData and updates all star labels on the cards.</summary>
     private void RefreshStars()
     {
         for (int i = 0; i < LevelConfig.TotalLevels; i++)
@@ -172,7 +161,6 @@ public sealed class LevelSelectForm : Form
             int levelNum = i + 1;
             int best     = SessionData.GetBestStars(levelNum);
 
-            // Find the stars label inside the card
             foreach (Control ctrl in _levelCards[i].Controls)
             {
                 if (ctrl.Tag is string tag && tag == $"stars_{levelNum}")
@@ -184,14 +172,11 @@ public sealed class LevelSelectForm : Form
         }
     }
 
-    private static string BuildStarString(int filled)
+    private static string BuildStarString(int filled) => filled switch
     {
-        return filled switch
-        {
-            1 => "★☆☆",
-            2 => "★★☆",
-            3 => "★★★",
-            _ => "☆☆☆"
-        };
-    }
+        1 => "★☆☆",
+        2 => "★★☆",
+        3 => "★★★",
+        _ => "☆☆☆"
+    };
 }

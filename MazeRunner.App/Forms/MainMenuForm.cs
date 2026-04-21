@@ -13,15 +13,14 @@ public sealed class MainMenuForm : Form
     private void InitializeComponent()
     {
         Text            = "Maze Runner";
-        Size            = new Size(480, 520);
-        MinimumSize     = new Size(480, 520);
-        MaximumSize     = new Size(480, 520);
+        Size            = new Size(480, 440);
+        MinimumSize     = new Size(480, 440);
+        MaximumSize     = new Size(480, 440);
         StartPosition   = FormStartPosition.CenterScreen;
         BackColor       = Color.FromArgb(18, 18, 24);
         FormBorderStyle = FormBorderStyle.FixedSingle;
         MaximizeBox     = false;
 
-        // ── Title label ──────────────────────────────────────────────────────
         var titleLabel = new Label
         {
             Text      = "MAZE RUNNER",
@@ -30,22 +29,21 @@ public sealed class MainMenuForm : Form
             AutoSize  = false,
             TextAlign = ContentAlignment.MiddleCenter,
             Size      = new Size(440, 80),
-            Location  = new Point(20, 80)
+            Location  = new Point(20, 60)
         };
 
         var subtitleLabel = new Label
         {
-            Text      = "Can you find the exit?",
+            Text      = "Find the key. Reach the exit.",
             Font      = new Font("Segoe UI", 12f, FontStyle.Italic),
             ForeColor = Color.FromArgb(160, 160, 160),
             AutoSize  = false,
             TextAlign = ContentAlignment.MiddleCenter,
             Size      = new Size(440, 30),
-            Location  = new Point(20, 165)
+            Location  = new Point(20, 148)
         };
 
-        // ── Buttons ──────────────────────────────────────────────────────────
-        var playButton = CreateMenuButton("▶  PLAY", new Point(140, 250));
+        var playButton = CreateMenuButton("▶  PLAY", new Point(140, 210));
         playButton.Click += (_, _) =>
         {
             Hide();
@@ -54,21 +52,11 @@ public sealed class MainMenuForm : Form
             Show();
         };
 
-        var exitButton = CreateMenuButton("✕  EXIT", new Point(140, 340));
+        var exitButton = CreateMenuButton("✕  EXIT", new Point(140, 300));
         exitButton.BackColor = Color.FromArgb(120, 30, 30);
         exitButton.Click += (_, _) => Application.Exit();
 
-        // ── Decorative maze icon (Unicode) ───────────────────────────────────
-        var iconLabel = new Label
-        {
-            Text      = "⬛",
-            Font      = new Font("Segoe UI Emoji", 48f),
-            ForeColor = Color.FromArgb(60, 130, 220),
-            AutoSize  = true,
-            Location  = new Point(210, 10)
-        };
-
-        Controls.AddRange([iconLabel, titleLabel, subtitleLabel, playButton, exitButton]);
+        Controls.AddRange([titleLabel, subtitleLabel, playButton, exitButton]);
     }
 
     private static Button CreateMenuButton(string text, Point location)

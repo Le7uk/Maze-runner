@@ -5,5 +5,6 @@ public enum Cell
     Wall,
     Floor,
     Start,
-    Exit
+    Exit,
+    Key
 }

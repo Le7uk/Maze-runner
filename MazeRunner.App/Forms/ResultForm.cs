@@ -29,7 +29,6 @@ public sealed class ResultForm : Form
         MaximizeBox     = false;
         MinimizeBox     = false;
 
-        // ── Header ────────────────────────────────────────────────────────────
         var headerLabel = new Label
         {
             Text      = "🏆  LEVEL COMPLETE!",
@@ -41,7 +40,6 @@ public sealed class ResultForm : Form
             Location  = new Point(20, 20)
         };
 
-        // ── Stars display ─────────────────────────────────────────────────────
         string starText = _stars switch
         {
             3 => "★★★",
@@ -61,7 +59,6 @@ public sealed class ResultForm : Form
             Location  = new Point(20, 75)
         };
 
-        // ── Star description ──────────────────────────────────────────────────
         string desc = _stars switch
         {
             3 => "⚡ Blazing fast!",
@@ -81,7 +78,6 @@ public sealed class ResultForm : Form
             Location  = new Point(20, 155)
         };
 
-        // ── Stats ─────────────────────────────────────────────────────────────
         int mins = _elapsedSeconds / 60;
         int secs = _elapsedSeconds % 60;
 
@@ -96,7 +92,6 @@ public sealed class ResultForm : Form
             Location  = new Point(20, 190)
         };
 
-        // ── Buttons ───────────────────────────────────────────────────────────
         var levelSelectButton = new Button
         {
             Text        = "◀  Level Select",
@@ -127,7 +122,6 @@ public sealed class ResultForm : Form
 
         if (_levelNumber >= 6)
         {
-            // Final level completed — change Next button to "You Win!"
             nextButton.Text      = "🎉 You Won!";
             nextButton.BackColor = Color.FromArgb(60, 160, 60);
             nextButton.Enabled   = true;

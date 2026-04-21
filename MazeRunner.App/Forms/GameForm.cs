@@ -6,56 +6,65 @@ namespace MazeRunner.App.Forms;
 
 public sealed class GameForm : Form
 {
-    // ── Core ─────────────────────────────────────────────────────────────────
     private readonly GameEngine _engine = new();
     private readonly int        _levelNumber;
-    private readonly int        _cellSize;
+    private int                 _cellSize;
 
-    /// <summary>Set to the next level number if the player clicked "Next Level" on the result screen.</summary>
     public int? RequestedNextLevel { get; private set; }
 
-    // ── Timing ───────────────────────────────────────────────────────────────
     private readonly System.Windows.Forms.Timer _gameTimer = new() { Interval = 1000 };
     private int _elapsedSeconds;
 
-    // ── UI ───────────────────────────────────────────────────────────────────
-    private MazePanel   _mazePanel = null!;
-    private Label       _timerLabel = null!;
-    private Label       _stepsLabel = null!;
+    private MazePanel _mazePanel    = null!;
+    private Label     _timerLabel   = null!;
+    private Label     _stepsLabel   = null!;
+    private Label     _keyLabel     = null!;
+    private Label     _hintLabel    = null!;
+
+    private readonly System.Windows.Forms.Timer _hintTimer = new() { Interval = 1800 };
 
     public GameForm(int levelNumber)
     {
         _levelNumber = levelNumber;
-        _cellSize    = SpriteRenderer.GetCellSize(levelNumber);
-
         _engine.LoadLevel(levelNumber);
         InitializeComponent();
 
         _gameTimer.Tick += OnTimerTick;
         _gameTimer.Start();
+
+        _hintTimer.Tick += (_, _) => { _hintLabel.Visible = false; _hintTimer.Stop(); };
     }
 
     private void InitializeComponent()
     {
+        var screen    = Screen.PrimaryScreen!.WorkingArea;
+        int hudHeight = 54;
+        int padding   = 10;
+
         var settings  = LevelConfig.GetLevel(_levelNumber);
-        int mazePixel = settings.GridSize * _cellSize;
-        int formW     = Math.Max(660, mazePixel + 40);
-        int formH     = mazePixel + 100;  // 100 = HUD(54) + margins
+        int gridSize  = settings.GridSize;
+
+        int availW = screen.Width  - padding * 2;
+        int availH = screen.Height - hudHeight - padding * 2;
+
+        _cellSize = SpriteRenderer.ComputeCellSize(gridSize, availW, availH);
+
+        int mazePixelW = gridSize * _cellSize;
+        int mazePixelH = gridSize * _cellSize;
 
         Text            = $"Maze Runner — Level {_levelNumber}";
-        ClientSize      = new Size(formW, formH);
-        StartPosition   = FormStartPosition.CenterScreen;
+        FormBorderStyle = FormBorderStyle.None;
+        WindowState     = FormWindowState.Maximized;
         BackColor       = Color.FromArgb(18, 18, 24);
-        FormBorderStyle = FormBorderStyle.FixedSingle;
-        MaximizeBox     = false;
         KeyPreview      = true;
 
         KeyDown += OnKeyDown;
 
-        // ── HUD panel ────────────────────────────────────────────────────────
+        int formW = screen.Width;
+
         var hudPanel = new Panel
         {
-            Size      = new Size(formW, 54),
+            Size      = new Size(formW, hudHeight),
             Location  = new Point(0, 0),
             BackColor = Color.FromArgb(28, 28, 38)
         };
@@ -87,6 +96,25 @@ public sealed class GameForm : Form
             Location  = new Point(330, 15)
         };
 
+        _keyLabel = new Label
+        {
+            Text      = "🔑 Key: NOT FOUND",
+            Font      = new Font("Segoe UI", 11f, FontStyle.Bold),
+            ForeColor = Color.FromArgb(200, 150, 50),
+            AutoSize  = true,
+            Location  = new Point(490, 17)
+        };
+
+        _hintLabel = new Label
+        {
+            Text      = "🔒 Find the key first!",
+            Font      = new Font("Segoe UI", 11f, FontStyle.Bold),
+            ForeColor = Color.FromArgb(255, 80, 80),
+            AutoSize  = true,
+            Location  = new Point(700, 17),
+            Visible   = false
+        };
+
         var exitButton = new Button
         {
             Text        = "✕ EXIT",
@@ -101,27 +129,27 @@ public sealed class GameForm : Form
         };
         exitButton.Click += (_, _) => ExitToLevelSelect();
 
-        hudPanel.Controls.AddRange([levelLabel, _stepsLabel, _timerLabel, exitButton]);
+        hudPanel.Controls.AddRange([levelLabel, _stepsLabel, _timerLabel,
+                                    _keyLabel, _hintLabel, exitButton]);
 
-        // ── Maze panel ───────────────────────────────────────────────────────
-        int mazeOffsetX = (formW - mazePixel) / 2;
+        int mazeOffsetX = (screen.Width  - mazePixelW) / 2;
+        int mazeOffsetY = hudHeight + (screen.Height - hudHeight - mazePixelH) / 2;
+
         _mazePanel = new MazePanel(_engine, _cellSize)
         {
-            Size     = new Size(mazePixel, mazePixel),
-            Location = new Point(mazeOffsetX, 57)
+            Size     = new Size(mazePixelW, mazePixelH),
+            Location = new Point(mazeOffsetX, mazeOffsetY)
         };
 
         Controls.AddRange([hudPanel, _mazePanel]);
     }
 
-    // ── Timer ─────────────────────────────────────────────────────────────────
     private void OnTimerTick(object? sender, EventArgs e)
     {
         _elapsedSeconds++;
         UpdateHud();
     }
 
-    // ── Keyboard input ────────────────────────────────────────────────────────
     private void OnKeyDown(object? sender, KeyEventArgs e)
     {
         if (_engine.IsCompleted) return;
@@ -132,32 +160,47 @@ public sealed class GameForm : Form
             Keys.S or Keys.Down  => MazeRunner.Core.Interfaces.Direction.Down,
             Keys.A or Keys.Left  => MazeRunner.Core.Interfaces.Direction.Left,
             Keys.D or Keys.Right => MazeRunner.Core.Interfaces.Direction.Right,
+            Keys.Escape          => null,
             _                    => (MazeRunner.Core.Interfaces.Direction?)null
         };
 
+        if (e.KeyCode == Keys.Escape) { ExitToLevelSelect(); return; }
         if (dir is null) return;
 
         _engine.MovePlayer(dir.Value);
         UpdateHud();
+
+        if (_engine.ExitBlockedFeedback)
+        {
+            _hintLabel.Visible = true;
+            _hintTimer.Stop();
+            _hintTimer.Start();
+        }
+
         _mazePanel.Invalidate();
 
         if (_engine.IsCompleted)
             OnLevelCompleted();
     }
 
-    // ── HUD update ────────────────────────────────────────────────────────────
     private void UpdateHud()
     {
-        _stepsLabel.Text  = $"Steps: {_engine.Player.Steps}";
+        _stepsLabel.Text = $"Steps: {_engine.Player.Steps}";
         int mins = _elapsedSeconds / 60;
         int secs = _elapsedSeconds % 60;
-        _timerLabel.Text  = $"{mins:D2}:{secs:D2}";
+        _timerLabel.Text = $"{mins:D2}:{secs:D2}";
+
+        if (_engine.HasKey)
+        {
+            _keyLabel.Text      = "🔑 Key: FOUND ✓";
+            _keyLabel.ForeColor = Color.FromArgb(100, 220, 100);
+        }
     }
 
-    // ── Level completion ──────────────────────────────────────────────────────
     private void OnLevelCompleted()
     {
         _gameTimer.Stop();
+        _hintTimer.Stop();
 
         int stars = LevelConfig.CalculateStars(_levelNumber, _elapsedSeconds);
         SessionData.UpdateStars(_levelNumber, stars);
@@ -165,7 +208,6 @@ public sealed class GameForm : Form
         using var result = new ResultForm(_levelNumber, stars, _elapsedSeconds, _engine.Player.Steps);
         var dlgResult = result.ShowDialog(this);
 
-        // If player clicked "Next Level", signal the caller to open the next level
         if (dlgResult == DialogResult.OK && _levelNumber < LevelConfig.TotalLevels)
             RequestedNextLevel = _levelNumber + 1;
 
@@ -175,17 +217,18 @@ public sealed class GameForm : Form
     private void ExitToLevelSelect()
     {
         _gameTimer.Stop();
+        _hintTimer.Stop();
         Close();
     }
 
     protected override void OnFormClosed(FormClosedEventArgs e)
     {
         _gameTimer.Dispose();
+        _hintTimer.Dispose();
         base.OnFormClosed(e);
     }
 }
 
-// ── Double-buffered maze panel ────────────────────────────────────────────────
 internal sealed class MazePanel : Panel
 {
     private readonly GameEngine _engine;
@@ -193,9 +236,8 @@ internal sealed class MazePanel : Panel
 
     public MazePanel(GameEngine engine, int cellSize)
     {
-        _engine   = engine;
-        _cellSize = cellSize;
-
+        _engine        = engine;
+        _cellSize      = cellSize;
         DoubleBuffered = true;
         BackColor      = Color.FromArgb(12, 12, 16);
     }
@@ -209,7 +251,6 @@ internal sealed class MazePanel : Panel
 
         g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
 
-        // Draw maze cells
         for (int row = 0; row < level.Height; row++)
         {
             for (int col = 0; col < level.Width; col++)
@@ -220,7 +261,6 @@ internal sealed class MazePanel : Panel
             }
         }
 
-        // Draw player on top
         int playerPx = _engine.Player.X * _cellSize;
         int playerPy = _engine.Player.Y * _cellSize;
         SpriteRenderer.DrawPlayer(g, playerPx, playerPy, _cellSize);

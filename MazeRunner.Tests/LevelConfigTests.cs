@@ -37,9 +37,7 @@ public class LevelConfigTests
     [Fact]
     public void GetAllLevels_CountIsSix()
     {
-        var all = LevelConfig.GetAllLevels();
-
-        Assert.Equal(6, all.Count);
+        Assert.Equal(6, LevelConfig.GetAllLevels().Count);
     }
 
     [Fact]
@@ -49,10 +47,8 @@ public class LevelConfigTests
 
         for (int i = 0; i < all.Count; i++)
         {
-            // Each size must be odd (required by the maze generator algorithm)
             Assert.Equal(1, all[i].GridSize % 2);
 
-            // Each level must be larger than the previous
             if (i > 0)
                 Assert.True(all[i].GridSize > all[i - 1].GridSize,
                     $"Level {i + 1} grid size must be larger than level {i}");
@@ -69,51 +65,44 @@ public class LevelConfigTests
         }
     }
 
-    // ── CalculateStars ─────────────────────────────────────────────────────────
-
     [Fact]
     public void CalculateStars_ExactlyAtThreeStarThreshold_ReturnsThree()
     {
-        var s     = LevelConfig.GetLevel(1);
-        int stars = LevelConfig.CalculateStars(1, s.ThreeStarSeconds);
+        var s = LevelConfig.GetLevel(1);
 
-        Assert.Equal(3, stars);
+        Assert.Equal(3, LevelConfig.CalculateStars(1, s.ThreeStarSeconds));
     }
 
     [Fact]
     public void CalculateStars_BelowThreeStarThreshold_ReturnsThree()
     {
-        var s     = LevelConfig.GetLevel(1);
-        int stars = LevelConfig.CalculateStars(1, s.ThreeStarSeconds - 1);
+        var s = LevelConfig.GetLevel(1);
 
-        Assert.Equal(3, stars);
+        Assert.Equal(3, LevelConfig.CalculateStars(1, s.ThreeStarSeconds - 1));
     }
 
     [Fact]
     public void CalculateStars_BetweenTwoAndThreeStarThresholds_ReturnsTwoStars()
     {
-        var s     = LevelConfig.GetLevel(1);
-        int stars = LevelConfig.CalculateStars(1, s.ThreeStarSeconds + 1);
+        var s = LevelConfig.GetLevel(1);
 
-        Assert.Equal(2, stars);
+        Assert.Equal(2, LevelConfig.CalculateStars(1, s.ThreeStarSeconds + 1));
     }
 
     [Fact]
     public void CalculateStars_ExactlyAtTwoStarThreshold_ReturnsTwoStars()
     {
-        var s     = LevelConfig.GetLevel(1);
-        int stars = LevelConfig.CalculateStars(1, s.TwoStarSeconds);
+        var s = LevelConfig.GetLevel(1);
 
-        Assert.Equal(2, stars);
+        Assert.Equal(2, LevelConfig.CalculateStars(1, s.TwoStarSeconds));
     }
 
     [Fact]
     public void CalculateStars_AboveTwoStarThreshold_ReturnsOneStar()
     {
-        var s     = LevelConfig.GetLevel(1);
-        int stars = LevelConfig.CalculateStars(1, s.TwoStarSeconds + 1);
+        var s = LevelConfig.GetLevel(1);
 
-        Assert.Equal(1, stars);
+        Assert.Equal(1, LevelConfig.CalculateStars(1, s.TwoStarSeconds + 1));
     }
 
     [Theory]
@@ -125,8 +114,6 @@ public class LevelConfigTests
     [InlineData(6)]
     public void CalculateStars_VeryLongTime_AlwaysReturnsAtLeastOneStar(int levelNum)
     {
-        int stars = LevelConfig.CalculateStars(levelNum, 99999);
-
-        Assert.Equal(1, stars);
+        Assert.Equal(1, LevelConfig.CalculateStars(levelNum, 99999));
     }
 }
