@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="MazeRunner.App/MazeRunner.App.csproj" />
+  <Project Path="MazeRunner.Core/MazeRunner.Core.csproj" />
+  <Project Path="MazeRunner.Tests/MazeRunner.Tests.csproj" />
+</Solution>
