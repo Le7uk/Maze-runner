@@ -23,10 +23,16 @@ public class GameEngine : IGameEngine
     {
         var settings = LevelConfig.GetLevel(levelNumber);
 
+        // ── Option 1: Static maze — same layout every run (fixed seed per level) ──
         var generator = new MazeGenerator(settings.Seed);
         var grid      = generator.Generate(settings.GridSize);
+        _random       = new Random(settings.Seed + 999);
 
-        _random = new Random(settings.Seed + 999);
+        // ── Option 2: Random maze — different layout every run (uncomment to use) ──
+        // var generator = new MazeGenerator();
+        // var grid      = generator.Generate(settings.GridSize);
+        // _random       = new Random();
+
         PlaceKey(grid, settings.GridSize);
 
         CurrentLevel        = new Level(levelNumber, grid);
